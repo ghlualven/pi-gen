@@ -8,6 +8,7 @@ export CURRENT_MOUNTPOINT
 export NBD_DEV
 export MAP_BOOT_DEV
 export MAP_ROOT_DEV
+export MAP_DATA_DEV
 
 # set in build.sh
 # should be fairly enough for the beginning
@@ -24,6 +25,7 @@ init_nbd() {
 			NBD_DEV=/dev/$(basename $x)
 			MAP_BOOT_DEV=/dev/mapper/$(basename $x)p1
 			MAP_ROOT_DEV=/dev/mapper/$(basename $x)p2
+                        MAP_DATA_DEV=/dev/mapper/$(basename $x)p3
 			break
 		fi
 	done
@@ -49,6 +51,7 @@ disconnect_blkdev() {
 	NBD_DEV=
 	MAP_BOOT_DEV=
 	MAP_ROOT_DEV=
+        MAP_DATA_DEV=
 	CURRENT_IMAGE=
 }
 export -f disconnect_blkdev
@@ -59,6 +62,8 @@ mount_qimage() {
 	mount -v -t ext4 $MAP_ROOT_DEV "$2"
 	mkdir -p "${ROOTFS_DIR}/boot"
 	mount -v -t vfat $MAP_BOOT_DEV "$2/boot"
+        mkdir -p "${ROOTFS_DIR}/data"
+	mount -v -t ext4 $MAP_DATA_DEV "$2/data"
 	CURRENT_MOUNTPOINT="$2"
 }
 export -f mount_qimage
@@ -111,6 +116,7 @@ EOF
 				kpartx -a $NBD_DEV
 				mkdosfs -n boot -F 32 -v $MAP_BOOT_DEV
 				mkfs.ext4 -L rootfs -O "^huge_file,^metadata_csum,^64bit" $MAP_ROOT_DEV
+				mkfs.ext4 -L data -O "^huge_file,^metadata_csum,^64bit" $MAP_DATA_DEV
 				sync
 			else
 				if [ ! -f "${WORK_DIR}/image-${PREV_STAGE}.qcow2" ]; then
@@ -129,6 +135,8 @@ EOF
 			mount -v -t ext4 $MAP_ROOT_DEV "${ROOTFS_DIR}"
 			mkdir -p "${ROOTFS_DIR}/boot"
 			mount -v -t vfat $MAP_BOOT_DEV "${ROOTFS_DIR}/boot"
+                        mkdir -p "${ROOTFS_DIR}/data"
+			mount -v -t ext4 $MAP_DATA_DEV "${ROOTFS_DIR}/data"
 			CURRENT_IMAGE=${WORK_DIR}/image-${STAGE}.qcow2
 			CURRENT_MOUNTPOINT=${ROOTFS_DIR}
 			popd > /dev/null
@@ -219,6 +227,8 @@ function make_bootable_image() {
 	echo "Boot: $BOOT_PARTUUID"
 	ROOT_PARTUUID="${IMGID}-02"
 	echo "Root: $ROOT_PARTUUID"
+        DATA_PARTUUID="${IMGID}-03"
+	echo "data: $DATA_PARTUUID"
 
 	echo "Mount image"
 	MOUNTROOT=${WORK_DIR}/tmpimage
@@ -232,22 +242,28 @@ function make_bootable_image() {
 	PARTITION=1
 	mount "${EXPORT_IMAGE}" "$MOUNTPT" -o loop,offset=$[ `/sbin/sfdisk -d "${EXPORT_IMAGE}" | grep "start=" | head -n $PARTITION | tail -n1 | sed 's/.*start=[ ]*//' | sed 's/,.*//'` * 512 ],sizelimit=$[ `/sbin/sfdisk -d "${EXPORT_IMAGE}" | grep "start=" | head -n $PARTITION | tail -n1 | sed 's/.*size=[ ]*//' | sed 's/,.*//'` * 512 ] || exit 1
 
+        MOUNTPT=$MOUNTROOT/data
+	PARTITION=3
+	mount "${EXPORT_IMAGE}" "$MOUNTPT" -o loop,offset=$[ `/sbin/sfdisk -d "${EXPORT_IMAGE}" | grep "start=" | head -n $PARTITION | tail -n1 | sed 's/.*start=[ ]*//' | sed 's/,.*//'` * 512 ],sizelimit=$[ `/sbin/sfdisk -d "${EXPORT_IMAGE}" | grep "start=" | head -n $PARTITION | tail -n1 | sed 's/.*size=[ ]*//' | sed 's/,.*//'` * 512 ] || exit 1
+
 	if [ ! -d "${MOUNTROOT}/root" ]; then
 		echo "Image damaged or not mounted. Exit."
 		exit 1
 	fi
 
 	echo "Setup PARTUUIDs"
-	if [ ! -z "$BOOT_PARTUUID" ] && [ ! -z "$ROOT_PARTUUID" ]; then
+	if [ ! -z "$BOOT_PARTUUID" ] && [ ! -z "$ROOT_PARTUUID" ] && [ ! -z "$DATA_PARTUUID"]; then
 		echo "Set UUIDs to make it bootable"
 		sed -i "s/BOOTDEV/PARTUUID=${BOOT_PARTUUID}/" "${MOUNTROOT}/etc/fstab"
 		sed -i "s/ROOTDEV/PARTUUID=${ROOT_PARTUUID}/" "${MOUNTROOT}/etc/fstab"
+                sed -i "s/DATADEV/PARTUUID=${DATA_PARTUUID}/" "${MOUNTROOT}/etc/fstab"
 		sed -i "s/ROOTDEV/PARTUUID=${ROOT_PARTUUID}/" "${MOUNTROOT}/boot/cmdline.txt"
 	fi
 
 	echo "Umount image"
 	sync
 	umount "${MOUNTROOT}/boot" || exit 1
+        umount "${MOUNTROOT}/data" || exit 1
 	umount "${MOUNTROOT}" || exit 1
 
 	echo "Remove qcow2 export image"
