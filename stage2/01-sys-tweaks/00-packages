@@ -7,8 +7,8 @@ console-setup keyboard-configuration debconf-utils parted unzip
 # python-gpiozero
 # python3-gpiozero
 avahi-daemon
-lua5.1
-luajit
+#lua5.1
+#luajit
 hardlink ca-certificates curl
 fake-hwclock 
 # nfs-common 
@@ -27,7 +27,7 @@ rsync
 htop
 # man-db
 # policykit-1
-ssh-import-id
+# ssh-import-id
 rng-tools
 ethtool
 vl805fw
@@ -37,5 +37,3 @@ rpi-eeprom
 # raspinfo
 vim
 python3
-
-
