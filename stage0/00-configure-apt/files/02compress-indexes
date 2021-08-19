@@ -1,0 +1,1 @@
+Acquire::GzipIndexes "true"; APT::Compressor::xz::Cost "40";

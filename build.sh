@@ -225,6 +225,8 @@ export GIT_HASH=${GIT_HASH:-"$(git rev-parse HEAD)"}
 
 export PUBKEY_SSH_FIRST_USER
 
+export DEB_EXCLUDE
+
 export CLEAN
 export IMG_NAME
 export APT_PROXY
