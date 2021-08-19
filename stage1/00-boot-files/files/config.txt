@@ -43,9 +43,12 @@
 #arm_freq=800
 
 # Uncomment some or all of these to enable the optional hardware interfaces
-#dtparam=i2c_arm=on
+# i2c 1
+dtparam=i2c_arm=on
+# i2c 0
+dtparam=i2c_vc=on
 #dtparam=i2s=on
-#dtparam=spi=on
+dtparam=spi=on
 
 # Uncomment this to enable infrared communication.
 #dtoverlay=gpio-ir,gpio_pin=17
@@ -54,12 +57,28 @@
 # Additional overlays and parameters are documented /boot/overlays/README
 
 # Enable audio (loads snd_bcm2835)
-dtparam=audio=on
+#dtparam=audio=on
 
 [pi4]
 # Enable DRM VC4 V3D driver on top of the dispmanx display stack
-dtoverlay=vc4-fkms-v3d
-max_framebuffers=2
+#dtoverlay=vc4-fkms-v3d
+#max_framebuffers=2
+
+[cm4]
+#dtparam=ant1
+dtparam=ant2
+# Enable USB
+dtoverlay=dwc2,dr_mode=host
+
+#dtoverlay=sc16is752-i2c,int_pin=21,addr=0x4B
+#dtoverlay=sc16is752-i2c,int_pin=22,addr=0x4A
+#dtoverlay=sc16is752-i2c,int_pin=23,addr=0x49
+#dtoverlay=sc16is752-i2c,int_pin=24,addr=0x48
+
+[pi3+]
+
 
 [all]
 #dtoverlay=vc4-fkms-v3d
+# Enable console
+enable_uart=1
