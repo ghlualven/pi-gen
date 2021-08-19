@@ -108,9 +108,11 @@ load_qimage() {
 				sync
 				qemu-nbd --discard=unmap -c $NBD_DEV image-${STAGE}.qcow2
 				sync
+                                # 250M boot, 4000M root, 200M data
 				sfdisk $NBD_DEV << EOF
 4MiB,250MiB,c,*
-254MiB,,83;
+254MiB,4000MiB,83,
+4254MiB,200MiB,83,;
 EOF
 				sync
 				kpartx -a $NBD_DEV
