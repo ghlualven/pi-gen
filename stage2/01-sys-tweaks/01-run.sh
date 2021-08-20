@@ -1,5 +1,8 @@
 #!/bin/bash -e
 
+install -m 755 files/eepflash.sh	"${ROOTFS_DIR}/usr/sbin/"
+install -m 755 files/eepmake	        "${ROOTFS_DIR}/usr/sbin/"
+
 # install -m 755 files/resize2fs_once	"${ROOTFS_DIR}/etc/init.d/"
 install -m 755 files/sethostname_once	"${ROOTFS_DIR}/etc/init.d/"
 install -m 755 files/sethostname.sh	"${ROOTFS_DIR}/usr/sbin/"
