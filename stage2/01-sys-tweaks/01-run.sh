@@ -1,6 +1,8 @@
 #!/bin/bash -e
 
-install -m 755 files/resize2fs_once	"${ROOTFS_DIR}/etc/init.d/"
+# install -m 755 files/resize2fs_once	"${ROOTFS_DIR}/etc/init.d/"
+install -m 755 files/sethostname_once	"${ROOTFS_DIR}/etc/init.d/"
+install -m 755 files/sethostname.sh	"${ROOTFS_DIR}/usr/sbin/"
 
 install -d				"${ROOTFS_DIR}/etc/systemd/system/rc-local.service.d"
 install -m 644 files/ttyoutput.conf	"${ROOTFS_DIR}/etc/systemd/system/rc-local.service.d/"
@@ -38,13 +40,16 @@ EOF
 if [ "${USE_QEMU}" = "1" ]; then
 	echo "enter QEMU mode"
 	install -m 644 files/90-qemu.rules "${ROOTFS_DIR}/etc/udev/rules.d/"
-	on_chroot << EOF
-systemctl disable resize2fs_once
-EOF
+# 	on_chroot << EOF
+# systemctl disable resize2fs_once
+# EOF
 	echo "leaving QEMU mode"
 else
-	on_chroot << EOF
-systemctl enable resize2fs_once
+# 	on_chroot << EOF
+# systemctl enable resize2fs_once
+# EOF
+        on_chroot << EOF
+systemctl enable sethostname_once
 EOF
 fi
 
